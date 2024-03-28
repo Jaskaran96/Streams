@@ -1,61 +1,51 @@
 const fs = require("fs").promises;
 
-// async function writeNumbersToFile(x, filePath) {
-//   let fd;
-//   try {
-//     console.time("writeMany");
-//     fd = await fs.open(filePath, "w");
-//     const stream = fd.createWriteStream();
-//     for (let i = 1; i <= x; i++) {
-//       // await fs.writeFile(fd, `${i} `);
-//       const buff = Buffer.from(`${i} `, "utf-8");
-//       stream.write(buff);
-//       // await fd.write(`${i} `);
-//     }
-//     console.timeEnd("writeMany");
-//   } catch (err) {
-//     console.error(err);
-//   } finally {
-//     if (fd !== undefined) await fd.close();
-//   }
-// }
+let curFileNumber = 1;
+let maxNumber = 1000000;
+let stream;
+const writeToFile = () => {
+  while (curFileNumber <= maxNumber) {
+    const buff = Buffer.from(`${curFileNumber} `, "utf-8");
 
-async function writeNumbersToFile(x, filePath) {
+    curFileNumber++;
+
+    //   `cur size ${stream.writableLength} and buff size is ${buff.length} and ${curFileNumber}`
+    // );
+    if (curFileNumber === maxNumber + 1) {
+      return stream.end(buff);
+    }
+
+    // stream.write will return false if the buffer is full, thus we will return and wait for the drain event to empty the buffer
+
+    if (!stream.write(buff)) {
+      return;
+    }
+    //console.log(stream.writableLength);
+  }
+};
+async function writeNumbersToFile(filePath) {
   let fd;
   try {
-    console.time("writeMany");
     fd = await fs.open(filePath, "w");
-    const stream = fd.createWriteStream();
-    console.log(stream.writableHighWaterMark);
-    console.log(stream.writableLength);
-    const buff = Buffer.alloc(4000);
-    stream.write(Buffer.alloc(4000));
-    console.log(stream.writableLength);
-    stream.write(Buffer.alloc(4000));
-    console.log(stream.writableLength);
-    stream.write(Buffer.alloc(4000));
-    console.log(stream.writableLength);
-    stream.write(Buffer.alloc(4000));
-    console.log(stream.writableLength);
-    stream.write(Buffer.alloc(4000));
-    console.log(stream.writableLength);
+    stream = fd.createWriteStream();
 
-    // for (let i = 1; i <= x; i++) {
-    //   // await fs.writeFile(fd, `${i} `);
-    //   const buff = Buffer.from(`${i} `, "utf-8");
-    //   console.log(`buff.length: ${buff.length}`);
-    //   stream.write(buff);
-    //   console.log(stream.writableLength);
-    //   // await fd.write(`${i} `);
-    // }
-    console.timeEnd("writeMany");
+    stream.on("drain", writeToFile);
+
+    stream.on("finish", () => {
+      console.timeEnd("writeToFile");
+      fd.close();
+    });
+
+    writeToFile();
+
+    // const internalBufferSize = stream.writableHighWaterMark;
+    // const bufferBytesFilled = stream.writableLength;
+    //console.timeEnd("writeMany");
   } catch (err) {
     console.error(err);
-  } finally {
-    if (fd !== undefined) await fd.close();
   }
 }
 
 // Usage
-
-writeNumbersToFile(10000, "./text.txt");
+console.time("writeToFile");
+writeNumbersToFile("./text.txt");
