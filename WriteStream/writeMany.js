@@ -1,7 +1,7 @@
 const fs = require("fs").promises;
 
 let curFileNumber = 1;
-let maxNumber = 1000000;
+let maxNumber = 10000000;
 let stream;
 const writeToFile = () => {
   while (curFileNumber <= maxNumber) {
@@ -48,4 +48,4 @@ async function writeNumbersToFile(filePath) {
 
 // Usage
 console.time("writeToFile");
-writeNumbersToFile("./text.txt");
+writeNumbersToFile("../source.txt");
